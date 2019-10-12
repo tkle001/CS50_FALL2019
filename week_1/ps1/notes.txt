@@ -1,0 +1,5 @@
+To improve credit.c:
+- num2array in credit.c should also take in an array and length of array 
+- then return that array
+- BAD: currently, num2array function in credit.c only take in a number and return an array
+- need to update
