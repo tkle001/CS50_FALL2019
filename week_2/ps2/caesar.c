@@ -28,11 +28,11 @@ int main(int argc, string argv[])
             //           A = 65    Z = 90
             if (islower(text[i]))
             {
-                c = (((text[i] + k) - 97) % 26) + 97;
+                c = (((text[i] + k) - 'a') % 26) + 'a';
             }
             else if (isupper(text[i]))
             {
-                c = (((text[i] + k) - 65) % 26) + 65;
+                c = (((text[i] + k) - 'A') % 26) + 'A';
             }
             else
             {
