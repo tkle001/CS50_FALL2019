@@ -1,4 +1,11 @@
-// Copies a BMP file
+/**
+ * resize.c
+ *
+ * This program resizes (i.e., enlarges or shrinks)
+ * 24-bit uncompressed BMPs by a factor of f.
+ *
+ */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,16 +22,13 @@ int main(int argc, char *argv[])
     }
 
     // remember filenames
-    char *n = argv[1];
+    float f = atof(argv[1]);  // string to float
     char *infile = argv[2];
     char *outfile = argv[3];
 
-    // string to int
-    int num = atoi(n);
-
-    if (num < 0 || num > 100)
+    if (f < 0 || f > 100)
     {
-        fprintf(stderr, "n must be a positive integer less than or equal to 100\n");
+        fprintf(stderr, "f must be a positive value less than or equal to 100.0\n");
         return 2;
     }
 
@@ -53,23 +57,6 @@ int main(int argc, char *argv[])
     BITMAPINFOHEADER bi;
     fread(&bi, sizeof(BITMAPINFOHEADER), 1, inptr);
 
-    // new dimesions
-    int w_i = abs(bi.biWidth);       // in
-    int h_i = abs(bi.biHeight);      // in
-    int w_o = w_i*n;            // out
-    int h_o = h_i*n;            // out
-
-    // padding for scanline
-    int padding_i = (4 - (w_i * sizeof(RGBTRIPLE)) % 4) % 4;
-    int padding_o = (4 - (w_o * sizeof(RGBTRIPLE)) % 4) % 4;
-
-    // modify header
-    bi.biWidth  = w_o;
-    bi.biHeight = h_o;
-    bi.biSizeImage = (size(RGBTRIPLE)*w_o + padding_o) * h_o;
-    bf.bfSize = bi.biSizeImage + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-
-
     // ensure infile is (likely) a 24-bit uncompressed BMP 4.0
     if (bf.bfType != 0x4d42 || bf.bfOffBits != 54 || bi.biSize != 40 ||
         bi.biBitCount != 24 || bi.biCompression != 0)
@@ -80,6 +67,22 @@ int main(int argc, char *argv[])
         return 5;
     }
 
+    // new dimesions
+    int w_i = abs(bi.biWidth);       // in
+    int h_i = bi.biHeight;           // in, biHeight is negative, the image is top-down
+    int w_o = w_i * f;               // out
+    int h_o = h_i * f;               // out
+
+    // padding for scanline
+    int padding_i = (4 - (w_i * sizeof(RGBTRIPLE)) % 4) % 4;
+    int padding_o = (4 - (w_o * sizeof(RGBTRIPLE)) % 4) % 4;
+
+    // modify header
+    bi.biWidth  = w_o;
+    bi.biHeight = h_o;
+    bi.biSizeImage = (sizeof(RGBTRIPLE) * w_o + padding_o) * abs(h_o);
+    bf.bfSize = bi.biSizeImage + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
     // write outfile's BITMAPFILEHEADER
     fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
 
@@ -87,13 +90,10 @@ int main(int argc, char *argv[])
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
 
     // allocate memory to store one scanline
-    RGBTRIPLE scanline[w_o * sizeof(RGBTRIPLE)];
-
-    // determine padding for scanlines
-    // int padding = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+    RGBTRIPLE output[w_i][abs(h_i)];
 
     // iterate over infile's scanlines
-    for (int i = 0; i < h_i; i++)
+    for (int i = 0, height = abs(h_i); i < height; i++)
     {
         // iterate over pixels in scanline
         for (int j = 0; j < w_i; j++)
@@ -104,24 +104,36 @@ int main(int argc, char *argv[])
             // read RGB triple from infile
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-            // store triple in scanline array
-            for (int k = 0; k < num; k++)
-            {
-                scanline[(j*num) + k] = triple;
-                // write RGB triple to outfile
-                fwrite(scanline, sizeof(RGBTRIPLE), w_o, outptr);
-
-                for (int l = 0; l < padding_o; k++)
-                {
-                    fputc(0x00, outptr);
-                }
-            }
+            // store RGB triple to output array
+            output[j][i] = triple;
         }
 
         // skip over padding, if any
         fseek(inptr, padding_i, SEEK_CUR);
-
     }
+
+    // writing the new image to file
+    for (int i = 0, new_height = abs(h_o); i < new_height; i++)
+    {
+        for (int j = 0; j < w_o; j++)
+        {
+            // temporary storage
+            RGBTRIPLE triple;
+
+            // scale the number of pixel
+            triple = output[(int)(j / f)][(int)(i / f)];
+
+            // write the pixel to the file
+            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+        }
+
+        // write the buffer
+        for (int k = 0; k < padding_o; k++)
+        {
+            fputc(0x00, outptr);
+        }
+    }
+
 
     // close infile
     fclose(inptr);

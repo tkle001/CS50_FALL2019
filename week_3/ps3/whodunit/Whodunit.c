@@ -1,4 +1,11 @@
-// Copies a BMP file
+/**
+ * whodunit.c
+ * 
+ * This program takes in a 24-bit uncompressed BMP 
+ * image and turn each pixel with hint of red white 
+ * and output that result in a new file
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,31 +81,17 @@ int main(int argc, char *argv[])
             // read RGB triple from infile
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
             
-            // create a wall of purple 
-            // triple.rgbtRed = 0x80; 
-            // triple.rgbtGreen = 0x00; 
-            // triple.rgbtBlue = 0x80;
-            
             // This is the start of the solution to this pset
-            // turn red pixel white
-//             if (triple.rgbtRed == 0xff && triple.rgbtGreen == 0x00 && triple.rgbtBlue == 0x00)
-//             {
-//                 triple.rgbtRed = 0xff;
-//                 triple.rgbtGreen = 0xff; 
-//                 triple.rgbtBlue = 0xff;
-//             } 
-            // turn all the white pixel black
-//             else if (triple.rgbtRed == 0xff && triple.rgbtGreen == 0xff && triple.rgbtBlue == 0xff)
-//             {
-//                 triple.rgbtRed = 0x00;
-//                 triple.rgbtGreen = 0x00; 
-//                 triple.rgbtBlue = 0x00;
-//             }
+            // turn pixel with hint of red white 
+            if (triple.rgbtRed == 0xff)
+            {
+                triple.rgbtGreen = 0xff; 
+                triple.rgbtBlue = 0xff;
+            } 
             // This is the end of the solution to this pset
-            
+
             // write RGB triple to outfile
             fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
-            
         }
 
         // skip over padding, if any
