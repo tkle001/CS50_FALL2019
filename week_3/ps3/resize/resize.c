@@ -3,6 +3,7 @@
  *
  * This program resizes (i.e., enlarges or shrinks)
  * 24-bit uncompressed BMPs by a factor of f.
+ * https://docs.cs50.net/2019/x/psets/3/resize/more/resize.html
  *
  */
 
